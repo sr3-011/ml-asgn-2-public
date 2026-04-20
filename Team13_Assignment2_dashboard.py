@@ -710,12 +710,20 @@ def run_pipeline():
         st.info("Downloading dataset from Google Drive... This may take a few minutes.")
         import sys
         import subprocess
+        import shutil
         
         # 1. Attempt to download the URL directly as a folder
         subprocess.run([sys.executable, "-m", "gdown", "--folder", GDRIVE_URL, "-O", DATA_DIR], check=False)
         
+        # Helper to check if any CSVs were successfully grabbed (flatteningly aware)
+        def has_csvs():
+            for _, _, f_list in os.walk(DATA_DIR):
+                if any(f.endswith(".csv") for f in f_list):
+                    return True
+            return False
+            
         # 2. Check if we got the files. If not, fallback to assuming it's a file / zip link
-        if len([f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]) < 1:
+        if not has_csvs():
             zip_path = os.path.join(DATA_DIR, "dataset.zip")
             subprocess.run([sys.executable, "-m", "gdown", GDRIVE_URL, "-O", zip_path], check=False)
             
@@ -727,7 +735,6 @@ def run_pipeline():
                 os.remove(zip_path)
                     
         # Flatten directory structure if files were extracted into a subfolder
-        import shutil
         for root, dirs, files in os.walk(DATA_DIR):
             for file in files:
                 if file.endswith(".csv") and root != os.path.abspath(DATA_DIR) and root != DATA_DIR:
