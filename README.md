@@ -68,34 +68,80 @@ venv\Scripts\Activate.ps1
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 > ```
 
+Your terminal prompt will show `(venv)` when the environment is active. Run `deactivate` to exit it.
+
 ### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Add the data files
+### 4. Create the `data/` directory and add the raw CSV files
 
-Get the `data/` folder from the shared Google Drive link. Place it in the repo root so the structure looks like:
+The app reads CSV files from a `data/` folder in the repo root. This folder is **not** included in the repository — you need to create it and populate it manually.
+
+**Step 1 — Create the folder**
+
+macOS / Linux:
+```bash
+mkdir data
+```
+
+Windows (Command Prompt or PowerShell):
+```bat
+mkdir data
+```
+
+**Step 2 — Copy the CSV files into `data/`**
+
+Place all raw EHR CSV files directly inside `data/` (no subdirectories). The dashboard expects these 15 files:
+
+```
+data/
+├── patients.csv
+├── encounters.csv
+├── observations.csv
+├── conditions.csv
+├── medications.csv
+├── procedures.csv
+├── immunizations.csv
+├── allergies.csv
+├── careplans.csv
+├── imaging_studies.csv
+├── devices.csv
+├── supplies.csv
+├── payer_transitions.csv
+├── claims.csv
+└── claims_transactions.csv
+```
+
+Your repo root should then look like:
 
 ```
 mlasgn2public/
 ├── data/
 │   ├── patients.csv
 │   ├── encounters.csv
-│   └── ... (17 CSVs total)
+│   └── ... (15 CSVs total)
 ├── Team13_Assignment2_dashboard.py
 └── requirements.txt
 ```
+
+> The CSV files are distributed via the shared Google Drive link provided by the course. Do not commit them to the repository — `data/` is already listed in `.gitignore`.
 
 ---
 
 ## Running the Dashboard
 
-Make sure your virtual environment is activated and you are in the repo root directory, then run:
+Make sure you are in the repo root directory, then run:
 
 ```bash
-streamlit run Team13_Assignment2_dashboard.py
+source venv/bin/activate && streamlit run Team13_Assignment2_dashboard.py
+```
+
+On Windows:
+```bat
+venv\Scripts\activate.bat && streamlit run Team13_Assignment2_dashboard.py
 ```
 
 Open [http://localhost:8501](http://localhost:8501) in your browser.
