@@ -745,24 +745,46 @@ def run_pipeline():
 
         st.success("Download complete! Continuing pipeline...")
 
-    patients     = pd.read_csv(DATA_DIR + "patients.csv", on_bad_lines="skip")
-    encounters   = pd.read_csv(DATA_DIR + "encounters.csv", on_bad_lines="skip")
-    observations = pd.read_csv(DATA_DIR + "observations.csv", on_bad_lines="skip")
-    conditions   = pd.read_csv(DATA_DIR + "conditions.csv", on_bad_lines="skip", dayfirst=True)
-    medications  = pd.read_csv(DATA_DIR + "medications.csv", on_bad_lines="skip")
-    procedures   = pd.read_csv(DATA_DIR + "procedures.csv", on_bad_lines="skip")
-    immunizations= pd.read_csv(DATA_DIR + "immunizations.csv", on_bad_lines="skip")
-    allergies    = pd.read_csv(DATA_DIR + "allergies.csv", on_bad_lines="skip")
-    careplans    = pd.read_csv(DATA_DIR + "careplans.csv", on_bad_lines="skip")
-    imaging      = pd.read_csv(DATA_DIR + "imaging_studies.csv", on_bad_lines="skip")
-    devices      = pd.read_csv(DATA_DIR + "devices.csv", on_bad_lines="skip")
-    supplies     = pd.read_csv(DATA_DIR + "supplies.csv", on_bad_lines="skip")
-    payer_trans  = pd.read_csv(DATA_DIR + "payer_transitions.csv", on_bad_lines="skip")
-    claims       = pd.read_csv(DATA_DIR + "claims.csv", on_bad_lines="skip")
-    claims_trans = pd.read_csv(DATA_DIR + "claims_transactions.csv", on_bad_lines="skip",
-                               usecols=lambda c: c in ["PATIENTID","TYPE","AMOUNT"])
+    def get_usecols(csv_path, expected):
+        try:
+            actual = pd.read_csv(csv_path, nrows=0).columns.tolist()
+            return [c for c in actual if c in expected]
+        except Exception:
+            return expected
+
+
+    patients     = pd.read_csv(DATA_DIR + "patients.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "patients.csv", ["Id","BIRTHDATE","DEATHDATE","GENDER","RACE","ETHNICITY","MARITAL","INCOME","HEALTHCARE_COVERAGE"]), dtype=str)
+    encounters   = pd.read_csv(DATA_DIR + "encounters.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "encounters.csv", ["PATIENT", "START", "Id","ENCOUNTERCLASS","BASE_ENCOUNTER_COST","TOTAL_CLAIM_COST","PAYER_COVERAGE"]), dtype=str)
+    observations = pd.read_csv(DATA_DIR + "observations.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "observations.csv", ["PATIENT","DESCRIPTION","VALUE"]), dtype=str)
+    conditions   = pd.read_csv(DATA_DIR + "conditions.csv", on_bad_lines="skip", dayfirst=True, usecols=get_usecols(DATA_DIR + "conditions.csv", ["PATIENT", "START", "DESCRIPTION"]), dtype=str)
+    medications  = pd.read_csv(DATA_DIR + "medications.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "medications.csv", ["PATIENT", "START", "DESCRIPTION", "BASE_COST", "DISPENSES"]), dtype=str)
+    procedures   = pd.read_csv(DATA_DIR + "procedures.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "procedures.csv", ["PATIENT", "START", "DESCRIPTION", "BASE_COST"]), dtype=str)
+    immunizations= pd.read_csv(DATA_DIR + "immunizations.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "immunizations.csv", ["PATIENT", "DATE", "DESCRIPTION"]), dtype=str)
+    allergies    = pd.read_csv(DATA_DIR + "allergies.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "allergies.csv", ["PATIENT", "START", "TYPE", "CATEGORY"]), dtype=str)
+    careplans    = pd.read_csv(DATA_DIR + "careplans.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "careplans.csv", ["PATIENT", "Id", "REASONDESCRIPTION"]), dtype=str)
+    imaging      = pd.read_csv(DATA_DIR + "imaging_studies.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "imaging_studies.csv", ["PATIENT", "Id", "MODALITY_DESCRIPTION", "BODYSITE_DESCRIPTION"]), dtype=str)
+    devices      = pd.read_csv(DATA_DIR + "devices.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "devices.csv", ["PATIENT", "START", "DESCRIPTION"]), dtype=str)
+    supplies     = pd.read_csv(DATA_DIR + "supplies.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "supplies.csv", ["PATIENT", "DATE", "DESCRIPTION"]), dtype=str)
+    payer_trans  = pd.read_csv(DATA_DIR + "payer_transitions.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "payer_transitions.csv", ["PATIENT", "START_DATE", "PAYER"]), dtype=str)
+    claims       = pd.read_csv(DATA_DIR + "claims.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "claims.csv", ["PATIENTID", "Id", "OUTSTANDING1", "CURRENT1", "TOTAL_CLAIM_COST"]), dtype=str)
+    claims_trans = pd.read_csv(DATA_DIR + "claims_transactions.csv", on_bad_lines="skip", usecols=get_usecols(DATA_DIR + "claims_transactions.csv", ["PATIENTID","TYPE","AMOUNT"]), dtype=str)
+
 
     ref_date = pd.Timestamp(TEMPORAL_CUTOFF, tz="UTC")
+    
+    # ---------------------------------------------------------
+    # Safely convert strictly numeric fields to floats to avoid 
+    # Pandas C-engine chunking/warning/IndexError parsing bugs.
+    # ---------------------------------------------------------
+    for col in ["BASE_ENCOUNTER_COST", "TOTAL_CLAIM_COST", "PAYER_COVERAGE"]:
+        if col in encounters.columns: encounters[col] = pd.to_numeric(encounters[col], errors="coerce")
+    for col in ["BASE_COST", "DISPENSES"]:
+        if col in medications.columns: medications[col] = pd.to_numeric(medications[col], errors="coerce")
+    if "BASE_COST" in procedures.columns: procedures["BASE_COST"] = pd.to_numeric(procedures["BASE_COST"], errors="coerce")
+    for col in ["OUTSTANDING1", "CURRENT1", "TOTAL_CLAIM_COST"]:
+        if col in claims.columns: claims[col] = pd.to_numeric(claims[col], errors="coerce")
+    if "AMOUNT" in claims_trans.columns: claims_trans["AMOUNT"] = pd.to_numeric(claims_trans["AMOUNT"], errors="coerce")
+
     patients["BIRTHDATE"] = pd.to_datetime(patients["BIRTHDATE"], errors="coerce", utc=True)
     patients["DEATHDATE"] = pd.to_datetime(patients["DEATHDATE"], errors="coerce", utc=True)
     patients["age"] = (ref_date - patients["BIRTHDATE"]).dt.days // 365
