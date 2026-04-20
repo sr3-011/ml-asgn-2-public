@@ -708,23 +708,23 @@ def run_pipeline():
     # Download dataset if not present
     if len([f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]) < 15:
         st.info("Downloading dataset from Google Drive... This may take a few minutes.")
-        import gdown
-        # Depending on how the Drive folder is shared, you might extract the ID and use download_folder
-        try:
-            folder_id = GDRIVE_URL.split("folders/")[1].split("?")[0]
-            gdown.download_folder(id=folder_id, output=DATA_DIR, quiet=False, use_cookies=False)
-        except Exception:
-            # Fallback to fuzzy download (useful if URL directly links to a zip or needs fuzzy extraction)
-            try:
-                gdown.download_folder(url=GDRIVE_URL, output=DATA_DIR, quiet=False, use_cookies=False)
-            except Exception:
-                zip_path = os.path.join(DATA_DIR, "dataset.zip")
-                gdown.download(url=GDRIVE_URL, output=zip_path, quiet=False, fuzzy=True)
-                import zipfile
-                if os.path.exists(zip_path) and zipfile.is_zipfile(zip_path):
+        import sys
+        import subprocess
+        
+        # 1. Attempt to download the URL directly as a folder
+        subprocess.run([sys.executable, "-m", "gdown", "--folder", GDRIVE_URL, "-O", DATA_DIR], check=False)
+        
+        # 2. Check if we got the files. If not, fallback to assuming it's a file / fuzzy zip link
+        if len([f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]) < 1:
+            zip_path = os.path.join(DATA_DIR, "dataset.zip")
+            subprocess.run([sys.executable, "-m", "gdown", GDRIVE_URL, "-O", zip_path, "--fuzzy"], check=False)
+            
+            import zipfile
+            if os.path.exists(zip_path):
+                if zipfile.is_zipfile(zip_path):
                     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                         zip_ref.extractall(DATA_DIR)
-                    os.remove(zip_path)
+                os.remove(zip_path)
                     
         # Flatten directory structure if files were extracted into a subfolder
         import shutil
