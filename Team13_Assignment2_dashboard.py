@@ -725,6 +725,17 @@ def run_pipeline():
                     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                         zip_ref.extractall(DATA_DIR)
                     os.remove(zip_path)
+                    
+        # Flatten directory structure if files were extracted into a subfolder
+        import shutil
+        for root, dirs, files in os.walk(DATA_DIR):
+            for file in files:
+                if file.endswith(".csv") and root != os.path.abspath(DATA_DIR) and root != DATA_DIR:
+                    try:
+                        shutil.move(os.path.join(root, file), os.path.join(DATA_DIR, file))
+                    except shutil.Error:
+                        pass # File already exists
+
         st.success("Download complete! Continuing pipeline...")
 
     patients     = pd.read_csv(DATA_DIR + "patients.csv", on_bad_lines="skip")
