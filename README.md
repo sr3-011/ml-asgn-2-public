@@ -76,9 +76,16 @@ Your terminal prompt will show `(venv)` when the environment is active. Run `dea
 pip install -r requirements.txt
 ```
 
-### 4. Create the `data/` directory and add the raw CSV files
+### 4. Setup the Data directory automatically or manually
 
-The app reads CSV files from a `data/` folder in the repo root. This folder is **not** included in the repository — you need to create it and populate it manually.
+The dashboard will **automatically attempt to download** the datasets to the `data/` folder on the first run using `gdown`. You simply need to provide the actual Google Drive folder link.
+
+Open `Team13_Assignment2_dashboard.py` and update the `GDRIVE_URL` variable at the top block:
+```python
+GDRIVE_URL = "https://drive.google.com/drive/folders/YOUR_FOLDER_ID_HERE?usp=sharing"
+```
+
+If auto-download fails or if you prefer to set it up manually:
 
 **Step 1 — Create the folder**
 

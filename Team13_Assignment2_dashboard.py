@@ -1,5 +1,6 @@
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 DATA_DIR = "data/"
+GDRIVE_URL = "https://drive.google.com/drive/folders/1HGjj4vBzRbSFkkjmcJOu6PESguvmZcpo?usp=sharing"  # Replace with actual folder URL
 RANDOM_STATE = 42
 TEMPORAL_CUTOFF = "2020-01-01"
 TEST_SIZE = 0.2
@@ -696,10 +697,36 @@ MUTED    = FG_MUTED
 INK      = FG
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PIPELINE — UNTOUCHED
+# PIPELINE
 # ══════════════════════════════════════════════════════════════════════════════
 @st.cache_data
 def run_pipeline():
+    import os
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+    
+    # Download dataset if not present
+    if len([f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]) < 15:
+        st.info("Downloading dataset from Google Drive... This may take a few minutes.")
+        import gdown
+        # Depending on how the Drive folder is shared, you might extract the ID and use download_folder
+        try:
+            folder_id = GDRIVE_URL.split("folders/")[1].split("?")[0]
+            gdown.download_folder(id=folder_id, output=DATA_DIR, quiet=False, use_cookies=False)
+        except IndexError:
+            # Fallback to fuzzy download (useful if URL directly links to a zip or needs fuzzy extraction)
+            try:
+                gdown.download_folder(url=GDRIVE_URL, output=DATA_DIR, quiet=False, use_cookies=False)
+            except Exception:
+                zip_path = os.path.join(DATA_DIR, "dataset.zip")
+                gdown.download(url=GDRIVE_URL, output=zip_path, quiet=False, fuzzy=True)
+                import zipfile
+                if os.path.exists(zip_path) and zipfile.is_zipfile(zip_path):
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(DATA_DIR)
+                    os.remove(zip_path)
+        st.success("Download complete! Continuing pipeline...")
+
     patients     = pd.read_csv(DATA_DIR + "patients.csv", on_bad_lines="skip")
     encounters   = pd.read_csv(DATA_DIR + "encounters.csv", on_bad_lines="skip")
     observations = pd.read_csv(DATA_DIR + "observations.csv", on_bad_lines="skip")
