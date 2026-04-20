@@ -714,10 +714,10 @@ def run_pipeline():
         # 1. Attempt to download the URL directly as a folder
         subprocess.run([sys.executable, "-m", "gdown", "--folder", GDRIVE_URL, "-O", DATA_DIR], check=False)
         
-        # 2. Check if we got the files. If not, fallback to assuming it's a file / fuzzy zip link
+        # 2. Check if we got the files. If not, fallback to assuming it's a file / zip link
         if len([f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]) < 1:
             zip_path = os.path.join(DATA_DIR, "dataset.zip")
-            subprocess.run([sys.executable, "-m", "gdown", GDRIVE_URL, "-O", zip_path, "--fuzzy"], check=False)
+            subprocess.run([sys.executable, "-m", "gdown", GDRIVE_URL, "-O", zip_path], check=False)
             
             import zipfile
             if os.path.exists(zip_path):
