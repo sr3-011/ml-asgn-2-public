@@ -34,53 +34,84 @@ ml_asgn_2/
 
 ## Setup
 
-**Python version:** 3.11 (required — the pickle files were generated with Python 3.11 + NumPy 2.x)
+**Python 3.11 is required.** The pickle files in `data/processed/` were generated with Python 3.11 + NumPy 2.x — using a different Python version will cause unpickling errors.
+
+### 1. Clone the repo
 
 ```bash
-python3.11 -m venv venv && source venv/bin/activate
-pip install pandas numpy scikit-learn matplotlib seaborn imbalanced-learn streamlit pillow joblib
+git clone https://github.com/<your-org>/mlasgn2public.git
+cd mlasgn2public
 ```
 
-> If you're on macOS with the system Python 3.11 at `/Library/Frameworks/Python.framework/Versions/3.11/`, use:
-> ```bash
-> /Library/Frameworks/Python.framework/Versions/3.11/bin/pip3 install \
->     pandas numpy scikit-learn matplotlib seaborn imbalanced-learn streamlit pillow joblib
+### 2. Create and activate a virtual environment
+
+**macOS / Linux**
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+```
+
+**Windows (Command Prompt)**
+```bat
+py -3.11 -m venv venv
+venv\Scripts\activate.bat
+```
+
+**Windows (PowerShell)**
+```powershell
+py -3.11 -m venv venv
+venv\Scripts\Activate.ps1
+```
+
+> If PowerShell blocks the activation script, run this once as Administrator:
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 > ```
 
-**Download raw data:** Get the 17 CSV files from Google Drive and place them directly in `data/`.
-
----
-
-## Running the Pipeline
+### 3. Install dependencies
 
 ```bash
-python pipeline.py   # generates data/processed/*.pkl
-python eda.py        # generates data/eda/*.png
+pip install -r requirements.txt
 ```
 
-> Skip these steps if `data/processed/` and `data/eda/` are already populated.
+### 4. Add the data files
+
+Get the `data/` folder from the shared Google Drive link. Place it in the repo root so the structure looks like:
+
+```
+mlasgn2public/
+├── data/
+│   ├── patients.csv
+│   ├── encounters.csv
+│   └── ... (17 CSVs total)
+├── Team13_Assignment2_dashboard.py
+└── requirements.txt
+```
 
 ---
 
 ## Running the Dashboard
 
+Make sure your virtual environment is activated and you are in the repo root directory, then run:
+
 ```bash
-streamlit run TeamXX_Assignment2_dashboard.py
+streamlit run Team13_Assignment2_dashboard.py
 ```
 
-Then open [http://localhost:8501](http://localhost:8501) in your browser.
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 The dashboard has 5 pages (navigate via the left sidebar):
 
 | Page | Contents |
 |------|----------|
-| 🏠 Project Overview | Pipeline architecture, team roles, dataset summary |
-| 📊 Exploratory Data Analysis | Class distribution, demographics, clinical features, drift, missing values |
-| 🤖 Model Performance | Per-metric bar charts, full metrics table, ROC curves, confusion matrices |
-| 🔄 Continual Learning | MLP before/after fine-tuning, catastrophic forgetting analysis |
-| 🔍 Feature Importance | Decision Tree top-20 features, feature category breakdown, searchable list |
+| Project Overview | Pipeline architecture, team roles, dataset summary |
+| Exploratory Data Analysis | Class distribution, demographics, clinical features, drift, missing values |
+| Model Performance | Per-metric bar charts, full metrics table, ROC curves, confusion matrices |
+| Continual Learning | MLP before/after fine-tuning, catastrophic forgetting analysis |
+| Feature Importance | Decision Tree top-20 features, feature category breakdown, searchable list |
 
-**No models are retrained** — all assets are loaded directly from `data/processed/` and `models/`.
+> **Important:** Always run `streamlit run` from the repo root (the folder containing `data/`). Running it from a different directory will cause a `FileNotFoundError` because the app looks for `data/` relative to the working directory.
+
 
 ---
 
