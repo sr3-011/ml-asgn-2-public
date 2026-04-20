@@ -713,7 +713,7 @@ def run_pipeline():
         try:
             folder_id = GDRIVE_URL.split("folders/")[1].split("?")[0]
             gdown.download_folder(id=folder_id, output=DATA_DIR, quiet=False, use_cookies=False)
-        except IndexError:
+        except Exception:
             # Fallback to fuzzy download (useful if URL directly links to a zip or needs fuzzy extraction)
             try:
                 gdown.download_folder(url=GDRIVE_URL, output=DATA_DIR, quiet=False, use_cookies=False)
